@@ -1,0 +1,1002 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2048 金幣主題版</title>
+    <!-- 載入 Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 使用 Inter 字體 -->
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+        :root {
+            --tile-bg-0: #fbf8f3;
+            --coin-color: #ffcc00; /* 金幣顏色 (黃銅/金) */
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            transition: background-color 0.5s ease;
+        }
+        /* 遊戲板和方塊容器 */
+        #game-board {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            grid-template-rows: repeat(4, 1fr);
+            gap: 12px;
+            background-color: #bbada0; /* 經典遊戲板背景 */
+            padding: 12px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+            touch-action: none; /* 禁用瀏覽器預設的觸摸行為 */
+        }
+
+        /* 方塊基礎樣式 */
+        .tile, .coin {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px; /* 數字放大 */
+            font-weight: 700;
+            color: #776e65;
+            border-radius: 6px;
+            transition: transform 0.15s ease-in-out, background-color 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        /* 金幣樣式：移除背景與邊框，使用 SVG 圓板 */
+        .coin {
+            background-color: transparent;
+            color: var(--coin-color); 
+            font-size: 0; /* 確保沒有遺留的字體影響 */
+            text-shadow: 0 0 8px rgba(0, 0, 0, 0.3); /* 增加陰影以確保在淺色背景下可見 */
+            box-shadow: none; 
+            transform: scale(1) rotate(0deg);
+            transition: transform 0.2s ease, opacity 0.3s ease;
+        }
+
+        /* 方塊數值顏色映射 (經典淺色系) - 調整大數字字體大小以適應放大後的基礎大小 */
+        .tile-2 { background-color: #eee4da; color: #776e65; }
+        .tile-4 { background-color: #ede0c8; color: #776e65; }
+        .tile-8 { background-color: #f2b179; color: #f9f6f2; }
+        .tile-16 { background-color: #f59563; color: #f9f6f2; }
+        .tile-32 { background-color: #f67c5f; color: #f9f6f2; }
+        .tile-64 { background-color: #f65e3b; color: #f9f6f2; }
+        .tile-128 { background-color: #edcf72; color: #f9f6f2; font-size: 28px; } /* 調整字體大小 */
+        .tile-256 { background-color: #edcc61; color: #f9f6f2; font-size: 28px; } /* 調整字體大小 */
+        .tile-512 { background-color: #edc850; color: #f9f6f2; font-size: 28px; } /* 調整字體大小 */
+        .tile-1024 { background-color: #edc53f; color: #f9f6f2; font-size: 24px; } /* 調整字體大小 */
+        .tile-2048 { background-color: #edc22e; color: #f9f6f2; font-size: 24px; } /* 調整字體大小 */
+        .tile-max { background-color: #3c3a32; color: #f9f6f2; font-size: 24px; } /* 調整字體大小 */
+
+        /* 新增方塊的閃爍特效 */
+        @keyframes sparkle {
+            /* 調整陰影強度和縮放幅度 */
+            0%, 100% { transform: scale(1); opacity: 1; box-shadow: 0 0 15px rgba(255, 255, 0, 0.7); }
+            50% { transform: scale(1.08); opacity: 0.9; box-shadow: 0 0 30px rgba(255, 255, 0, 1), 0 0 5px rgba(255, 255, 255, 0.9); }
+        }
+        .tile-new {
+            /* 調整閃爍時間：1.0s * 5 次 = 5.0 秒 */
+            animation: sparkle 1.0s ease-out 5;
+        }
+        
+        /* 方塊單元格：包含背景色和圓角 */
+        .tile-cell {
+            width: 100%;
+            padding-bottom: 100%; /* 保持 1:1 比例 */
+            position: relative;
+            background-color: var(--tile-bg-0);
+            border-radius: 6px;
+        }
+
+
+        /* 金幣收集特效 */
+        @keyframes coin-pop {
+            0% { transform: translateY(0); opacity: 1; }
+            100% { transform: translateY(-50px); opacity: 0; }
+        }
+        .coin-popup {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: var(--coin-color);
+            font-weight: 900;
+            font-size: 20px;
+            text-shadow: 0 0 5px #000;
+            pointer-events: none;
+            animation: coin-pop 1s ease-out forwards;
+        }
+
+        /* 滾動條樣式 */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background-color: #ccc;
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background-color: #aaa;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background-color: #f1f1f1;
+        }
+    </style>
+</head>
+<body id="body" class="bg-gray-50 flex flex-col items-center justify-center min-h-screen p-4 transition-colors duration-500">
+
+    <div class="w-full max-w-lg">
+        <!-- 頂部資訊區塊 -->
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-5xl font-extrabold text-gray-800">2048</h1>
+            
+            <div class="flex space-x-3 text-sm font-semibold">
+                <!-- 最高紀錄 -->
+                <div class="bg-yellow-200 text-yellow-800 p-2 rounded-lg text-center shadow-md">
+                    <div class="text-xs font-medium">最高紀錄</div>
+                    <div id="high-score" class="text-xl font-bold">0</div>
+                </div>
+                <!-- 本次分數 -->
+                <div class="bg-gray-800 text-white p-2 rounded-lg text-center shadow-md">
+                    <div class="text-xs font-medium">分數</div>
+                    <div id="score" class="text-xl font-bold">0</div>
+                </div>
+                <!-- 金幣數 -->
+                <div class="bg-amber-500 text-white p-2 rounded-lg text-center shadow-md">
+                    <div class="text-xs font-medium">金幣數</div>
+                    <div id="coins" class="text-xl font-bold flex items-center justify-center">
+                        <!-- HUD 金幣圖示 (簡化版圓圈) -->
+                        <svg class="w-5 h-5 mr-1" fill="none" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <circle cx="12" cy="12" r="10" fill="#ffcc00" stroke="#996600" stroke-width="2"/>
+                        </svg>
+                        <span id="coin-count">0</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 遊戲操作/狀態區塊 -->
+        <div class="flex justify-between items-center mb-4 text-sm">
+            <p class="text-gray-600">作者：卓玠含</p>
+            <div class="flex space-x-2">
+                <!-- 新增：遊戲說明按鈕 -->
+                <button id="instructions-btn" class="px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white font-bold rounded-full transition-colors shadow-lg">遊戲說明</button>
+                
+                <button id="shop-btn" class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-full transition-colors shadow-lg">主題商店</button>
+                <button id="restart-btn" class="px-4 py-2 bg-red-500 hover:bg-red-600 text-white font-bold rounded-full transition-colors shadow-lg">重新開始</button>
+            </div>
+        </div>
+
+        <!-- 遊戲板容器 -->
+        <div id="game-board-container" class="relative w-full aspect-square">
+            <div id="game-board" class="w-full h-full">
+                <!-- 方塊單元格將由 JS 生成 -->
+            </div>
+            <!-- 遊戲結束/獲勝訊息 (隱藏) -->
+            <div id="game-overlay" class="absolute inset-0 bg-white bg-opacity-80 flex items-center justify-center hidden rounded-lg transition-opacity duration-300">
+                <div class="text-center p-8 bg-white rounded-xl shadow-2xl">
+                    <h2 id="overlay-title" class="text-4xl font-bold text-gray-800 mb-4">遊戲結束!</h2>
+                    <p id="overlay-message" class="text-xl text-gray-600 mb-6">您的分數：<span id="final-score" class="font-extrabold text-red-500">0</span></p>
+                    <button id="overlay-restart-btn" class="px-6 py-3 bg-green-500 hover:bg-green-600 text-white font-bold rounded-full text-lg shadow-xl transition-transform transform hover:scale-105">重新開始</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 主題商店 Modal (隱藏) -->
+    <div id="shop-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-md transform transition-all duration-300 scale-95 opacity-0" id="shop-content">
+            <div class="flex justify-between items-center p-6 border-b">
+                <h3 class="text-2xl font-bold text-gray-800">主題商店</h3>
+                <button id="close-shop-btn" class="text-gray-500 hover:text-gray-700 text-3xl font-light">&times;</button>
+            </div>
+            
+            <div class="p-4 h-96 overflow-y-auto custom-scrollbar">
+                <p class="text-sm text-gray-600 mb-4">您擁有的金幣數：<span id="shop-current-coins" class="font-extrabold text-amber-500">0</span></p>
+                <div id="theme-list" class="space-y-4">
+                    <!-- 主題列表將由 JS 填充 -->
+                </div>
+            </div>
+
+            <div class="p-4 border-t text-sm text-gray-500">
+                感謝您的支持！所有主題均為淺色設計。
+            </div>
+        </div>
+    </div>
+
+    <!-- 遊戲說明 Modal (隱藏) -->
+    <div id="instruction-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-md transform transition-all duration-300 scale-95 opacity-0" id="instruction-content">
+            <div class="flex justify-between items-center p-6 border-b">
+                <h3 class="text-2xl font-bold text-gray-800">遊戲說明與規則</h3>
+                <button id="close-instructions-btn" class="text-gray-500 hover:text-gray-700 text-3xl font-light">&times;</button>
+            </div>
+            
+            <div class="p-6 h-96 overflow-y-auto custom-scrollbar text-gray-700 space-y-6">
+                <div id="instructions-text"></div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        // --- Firebase Firestore 導入 ---
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, onSnapshot, getDoc, collection } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        
+        // 設置 Firebase Config 和 App ID
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+
+        let app, db, auth;
+        let userId = null;
+        let isAuthReady = false;
+
+        // Game State Variables
+        let board = Array(16).fill(0);
+        let currentScore = 0;
+        let highScore = 0;
+        let coins = 0;
+        let coinPosition = null; // [row, col] or null
+        let isGameOver = false;
+        let currentThemeId = 0;
+        let purchasedThemes = new Set();
+        let tileMoving = false; // Flag to prevent rapid keypresses
+        
+        // Data Structure for Themes (淺色系, 20金幣間隔)
+        const themes = [
+            { id: 0, name: '經典白 (預設)', cost: 0, 
+                bodyBg: '#fbf8f3', boardBg: '#bbada0', 
+                colorMap: { 2: '#eee4da', 4: '#ede0c8', 8: '#f2b179', 16: '#f59563', 32: '#f67c5f', 64: '#f65e3b', 128: '#edcf72', 256: '#edcc61', 512: '#edc850', 1024: '#edc53f', 2048: '#edc22e', 'max': '#3c3a32' },
+                gradient: ''
+            },
+            { id: 1, name: '薄荷綠', cost: 20, 
+                bodyBg: '#f0fff4', boardBg: '#a3a380', 
+                colorMap: { 2: '#c9e6c9', 4: '#aad1aa', 8: '#90c690', 16: '#76b876', 32: '#5ca95c', 64: '#4d934d', 128: '#3d7a3d', 256: '#2e612e', 512: '#1f471f', 1024: '#102e10', 2048: '#001400', 'max': '#000' },
+                gradient: ''
+            },
+            { id: 2, name: '蜜桃粉', cost: 40, 
+                bodyBg: '#fff0f5', boardBg: '#cc99a3', 
+                colorMap: { 2: '#ffe0e6', 4: '#ffc6d4', 8: '#ffadbf', 16: '#ff94aa', 32: '#ff7b95', 64: '#ff6280', 128: '#ff496b', 256: '#ff3056', 512: '#ff1741', 1024: '#e6002c', 2048: '#cc0026', 'max': '#99001b' },
+                gradient: ''
+            },
+            { id: 3, name: '朝陽漸層 (60)', cost: 60, 
+                bodyBg: 'linear-gradient(to right bottom, #fff7ed, #fee2e2)', boardBg: '#d9a380', 
+                colorMap: { 2: '#fef3c7', 4: '#fde68a', 8: '#fcd34d', 16: '#fbbf24', 32: '#f59e0b', 64: '#d97706', 128: '#b45309', 256: '#92400e', 512: '#78350f', 1024: '#451a03', 2048: '#1c1b00', 'max': '#000' },
+                gradient: 'bg-gradient-to-br from-[#fff7ed] to-[#fee2e2]' /* Tailwind class for body */
+            },
+            { id: 4, name: '海風漸層 (80)', cost: 80, 
+                bodyBg: 'linear-gradient(to right bottom, #eff6ff, #dbeafe)', boardBg: '#a9b8cc', 
+                colorMap: { 2: '#d0f0fd', 4: '#96d2f3', 8: '#5aace3', 16: '#3089c9', 32: '#1b63ab', 64: '#0b3e7c', 128: '#052d5b', 256: '#031c3a', 512: '#010d1f', 1024: '#00040f', 2048: '#000205', 'max': '#000' },
+                gradient: 'bg-gradient-to-br from-[#eff6ff] to-[#dbeafe]' /* Tailwind class for body */
+            },
+            { id: 5, name: '薰衣草 (100)', cost: 100, 
+                bodyBg: '#faf5ff', boardBg: '#b3a0c4', 
+                colorMap: { 2: '#e5d7ff', 4: '#ccb8ff', 8: '#b399ff', 16: '#997aff', 32: '#805bff', 64: '#663dff', 128: '#4c1eff', 256: '#3300ff', 512: '#2600cc', 1024: '#1a0099', 2048: '#0d0066', 'max': '#000' },
+                gradient: ''
+            },
+        ];
+
+        // --- Firebase 初始化與認證 ---
+        const initializeFirebase = async () => {
+            if (Object.keys(firebaseConfig).length === 0) {
+                console.error("Firebase config is missing. Data persistence will not work.");
+                return;
+            }
+
+            try {
+                // setLogLevel('debug'); // 啟用 FireStore Debug Log
+                app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+
+                onAuthStateChanged(auth, (user) => {
+                    if (user) {
+                        userId = user.uid;
+                        isAuthReady = true;
+                        console.log("Firebase Auth Ready. User ID:", userId);
+                        setupFirestoreListener();
+                    } else {
+                        // Fallback for environments without custom token, use random ID for state saving
+                        userId = crypto.randomUUID(); 
+                        isAuthReady = true;
+                        console.warn("Signed in anonymously or using fallback UUID:", userId);
+                        setupFirestoreListener();
+                    }
+                });
+
+            } catch (error) {
+                console.error("Firebase initialization failed:", error);
+            }
+        };
+
+        // --- Firestore 資料操作 ---
+        const getGameStateDocRef = () => {
+            if (!db || !userId) {
+                console.error("Firestore not ready.");
+                return null;
+            }
+            // Private path: /artifacts/{appId}/users/{userId}/game2048/state
+            const collectionPath = `artifacts/${appId}/users/${userId}/game2048`;
+            return doc(db, collectionPath, 'state');
+        };
+
+        const setupFirestoreListener = () => {
+            if (!isAuthReady) return;
+
+            const docRef = getGameStateDocRef();
+            if (!docRef) return;
+
+            onSnapshot(docRef, (docSnap) => {
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    highScore = data.highScore || 0;
+                    coins = data.coins || 0;
+                    currentThemeId = data.currentThemeId || 0;
+                    // FIX: Changed 'purchasesdThemes' (typo) to 'purchasedThemes'
+                    purchasedThemes = new Set(data.purchasedThemes || [0]);
+                    
+                    document.getElementById('high-score').textContent = highScore;
+                    document.getElementById('coin-count').textContent = coins;
+                    
+                    // Apply theme immediately
+                    applyTheme(currentThemeId);
+                } else {
+                    console.log("No game state found, saving initial state.");
+                    saveGameState(true); // Save initial state
+                }
+            }, (error) => {
+                console.error("Error listening to Firestore:", error);
+            });
+        };
+
+        const saveGameState = async (isInitialSave = false) => {
+            if (!isAuthReady) return;
+
+            const docRef = getGameStateDocRef();
+            if (!docRef) return;
+
+            const dataToSave = {
+                highScore: Math.max(highScore, currentScore),
+                coins: coins,
+                currentThemeId: currentThemeId,
+                purchasedThemes: Array.from(purchasedThemes),
+                // Only save board state if it's the initial save or if we want to resume.
+                // For 2048, we usually reset the board on new game, so only saving high score/coins/themes.
+            };
+
+            try {
+                await setDoc(docRef, dataToSave, { merge: true });
+                if (isInitialSave) console.log("Initial state saved.");
+            } catch (error) {
+                console.error("Error saving game state:", error);
+            }
+        };
+
+        // --- 遊戲邏輯與 UI 渲染 ---
+
+        // 輔助函式：根據索引計算 row 和 col
+        const indexToCoords = (i) => [Math.floor(i / 4), i % 4];
+        const coordsToIndex = (r, c) => r * 4 + c;
+
+        // 輔助函式：取得隨機空位
+        const getEmptyCells = () => {
+            const empty = [];
+            board.forEach((val, i) => {
+                const [r, c] = indexToCoords(i);
+                // 檢查是否為空且不是金幣位置
+                if (val === 0 && !(coinPosition && coinPosition[0] === r && coinPosition[1] === c)) {
+                    empty.push(i);
+                }
+            });
+            return empty;
+        };
+        
+        // 輔助函式：取得所有空閒位置 (包含金幣位置)
+        const getAllAvailableCells = () => {
+            const available = [];
+            board.forEach((val, i) => {
+                if (val === 0) {
+                    available.push(i);
+                }
+            });
+            return available;
+        }
+
+        // 產生新方塊 (2 或 4)
+        const spawnTile = (animate = true) => {
+            const empty = getEmptyCells();
+            if (empty.length > 0) {
+                const i = empty[Math.floor(Math.random() * empty.length)];
+                board[i] = Math.random() < 0.9 ? 2 : 4;
+                if (animate) {
+                    const [r, c] = indexToCoords(i);
+                    // 為了觸發閃爍，我們在下次 UI 渲染時直接將 'tile-new' 類別賦予給新方塊
+                    const cellEl = document.getElementById(`cell-${r}-${c}`);
+                    if (cellEl) {
+                        cellEl.classList.add('tile-new'); 
+                        // 在 updateUI 中，實際的 tile 元素會檢查這個 cell 是否有 'tile-new'
+                        // 調整延遲時間以符合新的動畫持續時間 (5000ms)
+                        setTimeout(() => cellEl.classList.remove('tile-new'), 5000);
+                    }
+                }
+                return true;
+            }
+            return false;
+        };
+
+        // 產生金幣
+        const spawnCoin = () => {
+            const available = getAllAvailableCells();
+            // 規則：只有剩餘空白格 > 4 才生成金幣
+            if (available.length > 4 && coinPosition === null) {
+                const i = available[Math.floor(Math.random() * available.length)];
+                coinPosition = indexToCoords(i); // indexToCoords 現在返回 [r, c] 陣列
+                return true;
+            }
+            return false;
+        };
+
+        // 渲染遊戲板和分數
+        const updateUI = () => {
+            const gameBoardEl = document.getElementById('game-board');
+            gameBoardEl.innerHTML = ''; // 清空舊內容
+            
+            const currentTheme = themes[currentThemeId];
+            
+            for (let r = 0; r < 4; r++) {
+                for (let c = 0; c < 4; c++) {
+                    const i = coordsToIndex(r, c);
+                    const value = board[i];
+                    
+                    const cell = document.createElement('div');
+                    // 由於 spawnTile 可能在 DOM 元素渲染前調用，我們在此處設置 cell 的 ID
+                    // 這樣 CSS 動畫才能生效 (例如 tile-new)
+                    cell.id = `cell-${r}-${c}`; 
+                    cell.className = 'tile-cell';
+
+                    // 渲染方塊
+                    if (value > 0) {
+                        const tile = document.createElement('div');
+                        const tileClass = `tile-${value > 2048 ? 'max' : value}`;
+                        const bgColor = currentTheme.colorMap[value > 2048 ? 'max' : value] || currentTheme.colorMap['max'];
+                        const textColor = [2, 4].includes(value) ? '#776e65' : '#f9f6f2';
+                        
+                        // 設置 Tile ID，這是用於 Sparkle 特效的目標元素
+                        tile.id = `tile-${r}-${c}`; 
+                        tile.className = `tile absolute inset-0 flex items-center justify-center font-bold transition-all duration-100 ease-out ${tileClass}`;
+                        tile.style.backgroundColor = bgColor;
+                        tile.style.color = textColor;
+                        tile.textContent = value;
+                        
+                        // 檢查 cell 是否需要閃爍（從 spawnTile 傳遞過來的標記）
+                        const targetCellEl = document.getElementById(`cell-${r}-${c}`);
+                        if (targetCellEl && targetCellEl.classList.contains('tile-new')) {
+                           tile.classList.add('tile-new');
+                           // 延遲移除 cell 的 'tile-new' class，以便下次 updateUI 時 tile 不再閃爍
+                           // 調整延遲時間以符合新的動畫持續時間 (5000ms)
+                           setTimeout(() => targetCellEl.classList.remove('tile-new'), 5000);
+                        }
+
+                        cell.appendChild(tile);
+                    }
+
+                    // 渲染金幣
+                    if (coinPosition && coinPosition[0] === r && coinPosition[1] === c) {
+                        const coinEl = document.createElement('div');
+                        // 使用 .coin 類以應用無背景、大符號的樣式
+                        coinEl.className = 'coin absolute inset-0 flex items-center justify-center';
+                        
+                        // 使用 SVG 呈現圓形銅板外觀
+                        // p-10 讓金幣縮小到約 1/2
+                        coinEl.innerHTML = `
+                            <svg class="w-full h-full p-10" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                                <circle cx="50" cy="50" r="40" fill="var(--coin-color)" stroke="#b8860b" stroke-width="6"/>
+                                <text x="50" y="62" font-family="Inter, sans-serif" font-size="38" fill="#996600" text-anchor="middle" font-weight="900">$</text>
+                            </svg>
+                        `;
+                        coinEl.id = `coin-${r}-${c}`;
+                        cell.appendChild(coinEl);
+                    }
+                    
+                    gameBoardEl.appendChild(cell);
+                }
+            }
+
+            // 更新分數顯示
+            document.getElementById('score').textContent = currentScore;
+            document.getElementById('high-score').textContent = highScore;
+            document.getElementById('coin-count').textContent = coins;
+            document.getElementById('shop-current-coins').textContent = coins;
+        };
+        
+        // 顯示金幣+1特效
+        const showCoinEffect = (r, c) => {
+            const container = document.getElementById('game-board-container');
+            const boardRect = document.getElementById('game-board').getBoundingClientRect();
+            
+            // 計算金幣實際位置 (基於 4x4 網格)
+            const cellWidth = boardRect.width / 4;
+            const cellHeight = boardRect.height / 4;
+            const x = c * cellWidth + cellWidth / 2;
+            const y = r * cellHeight + cellHeight / 2;
+
+            const popup = document.createElement('div');
+            popup.className = 'coin-popup';
+            popup.style.left = `${x}px`;
+            popup.style.top = `${y}px`;
+            popup.textContent = '金幣 +1!';
+            container.appendChild(popup);
+
+            // 1秒後移除特效
+            setTimeout(() => popup.remove(), 1000);
+        };
+
+        // 核心移動與合併邏輯
+        const slideAndMerge = (line) => {
+            // 1. 滑動 (將所有非零數字移到一側)
+            let newArr = line.filter(val => val !== 0);
+            let merged = false;
+            
+            // 2. 合併
+            for (let i = 0; i < newArr.length - 1; i++) {
+                if (newArr[i] === newArr[i+1]) {
+                    newArr[i] *= 2;
+                    currentScore += newArr[i];
+                    newArr.splice(i+1, 1); // 移除被合併的數字
+                    merged = true;
+                }
+            }
+            
+            // 3. 填滿零
+            while (newArr.length < 4) {
+                newArr.push(0);
+            }
+            
+            return { newLine: newArr, merged: merged || (newArr.length !== line.filter(val => val !== 0).length) };
+        };
+
+        // 處理四個方向的移動
+        const handleMove = (direction) => {
+            if (isGameOver || tileMoving) return;
+            tileMoving = true;
+            
+            let moved = false;
+            let coinCollected = false;
+            
+            // 儲存金幣移動前的座標
+            // coinPosition 現在是 [r, c] 陣列，故可以展開複製
+            const oldCoinPosition = coinPosition ? [...coinPosition] : null;
+
+            // 輔助函式：取得或設定特定行/列
+            const getLine = (i) => {
+                switch (direction) {
+                    case 'UP': return [board[i], board[i + 4], board[i + 8], board[i + 12]];
+                    case 'DOWN': return [board[i + 12], board[i + 8], board[i + 4], board[i]];
+                    case 'LEFT': return [board[i * 4], board[i * 4 + 1], board[i * 4 + 2], board[i * 4 + 3]];
+                    case 'RIGHT': return [board[i * 4 + 3], board[i * 4 + 2], board[i * 4 + 1], board[i * 4]];
+                }
+            };
+            
+            const setLine = (i, newLine) => {
+                switch (direction) {
+                    case 'UP': 
+                        board[i] = newLine[0]; board[i + 4] = newLine[1]; board[i + 8] = newLine[2]; board[i + 12] = newLine[3]; 
+                        // 檢查金幣是否被移動到 (此處邏輯複雜且非必要，因為主要靠後面的 coinIndex 檢查)
+                        return;
+                    case 'DOWN': 
+                        board[i + 12] = newLine[0]; board[i + 8] = newLine[1]; board[i + 4] = newLine[2]; board[i] = newLine[3]; 
+                        return;
+                    case 'LEFT': 
+                        board[i * 4] = newLine[0]; board[i * 4 + 1] = newLine[1]; board[i * 4 + 2] = newLine[2]; board[i * 4 + 3] = newLine[3]; 
+                        return;
+                    case 'RIGHT': 
+                        board[i * 4 + 3] = newLine[0]; board[i * 4 + 2] = newLine[1]; board[i * 4 + 1] = newLine[2]; board[i * 4] = newLine[3]; 
+                        return;
+                }
+            };
+
+            for (let i = 0; i < 4; i++) {
+                const oldLine = getLine(i);
+                const result = slideAndMerge(oldLine);
+                
+                if (result.merged) {
+                    moved = true;
+                    setLine(i, result.newLine);
+                }
+            }
+            
+            // 金幣收集邏輯：
+            // 檢查金幣位置是否被數字方塊佔據 (值 > 0)
+            if (oldCoinPosition) {
+                const coinIndex = coordsToIndex(oldCoinPosition[0], oldCoinPosition[1]);
+                if (board[coinIndex] > 0) { // 只要原金幣位置被數字方塊佔據，即視為收集
+                    coinCollected = true;
+                    coins += 1;
+                    coinPosition = null; // 金幣消失
+                    showCoinEffect(oldCoinPosition[0], oldCoinPosition[1]);
+                }
+            }
+
+            if (moved) {
+                // 1. 生成新方塊 (如果發生移動)
+                spawnTile(); 
+                
+                // 2. 嘗試生成新金幣 (如果沒有金幣且沒有收集金幣)
+                if (coinPosition === null && !coinCollected) {
+                    spawnCoin();
+                }
+
+                // 3. 檢查遊戲結束
+                setTimeout(() => {
+                    updateUI();
+                    checkGameOver();
+                    saveGameState();
+                    tileMoving = false;
+                }, 100); // 延遲 UI 更新以允許CSS動畫
+            } else {
+                tileMoving = false;
+            }
+            
+            // 如果沒移動，仍需更新 UI (例如，清除閃爍)
+            if (!moved) {
+                updateUI();
+            }
+        };
+
+        // 檢查遊戲是否結束 (滿板且無法移動)
+        const checkGameOver = () => {
+            if (getEmptyCells().length > 0) return; // 還有空位
+
+            // 檢查是否還有任何可能的合併
+            const canMove = (b) => {
+                for (let r = 0; r < 4; r++) {
+                    for (let c = 0; c < 4; c++) {
+                        const i = coordsToIndex(r, c);
+                        const val = b[i];
+                        if (val === 0) continue;
+
+                        // 檢查右邊和下邊
+                        if (c < 3 && b[coordsToIndex(r, c + 1)] === val) return true; // 橫向合併
+                        if (r < 3 && b[coordsToIndex(r + 1, c)] === val) return true; // 縱向合併
+                    }
+                }
+                return false;
+            };
+
+            if (!canMove(board)) {
+                isGameOver = true;
+                showGameOver(false);
+            }
+        };
+
+        // 顯示遊戲結束或獲勝畫面
+        const showGameOver = (isWin) => {
+            const overlay = document.getElementById('game-overlay');
+            const finalScoreEl = document.getElementById('final-score');
+            const titleEl = document.getElementById('overlay-title');
+            const messageEl = document.getElementById('overlay-message');
+
+            // 修正：移除明確的 console.error，只使用條件判斷進行內容設置
+            if (finalScoreEl) {
+                finalScoreEl.textContent = currentScore;
+            }
+
+            if (isWin) {
+                if (titleEl) titleEl.textContent = '恭喜您獲得 2048!';
+                if (messageEl) messageEl.textContent = `您可以繼續玩下去，或者按重新開始鍵！`;
+            } else {
+                if (titleEl) titleEl.textContent = '遊戲結束!';
+                if (messageEl) messageEl.textContent = `您的分數：${currentScore}`;
+            }
+
+            if (overlay) {
+                overlay.classList.remove('hidden');
+                overlay.style.opacity = '1';
+            }
+        };
+
+        // 初始化/重新開始遊戲
+        const initGame = () => {
+            board.fill(0);
+            currentScore = 0;
+            isGameOver = false;
+            coinPosition = null;
+            document.getElementById('game-overlay').classList.add('hidden');
+            document.getElementById('game-overlay').style.opacity = '0';
+            
+            // 1. 產生初始 2 塊方塊
+            spawnTile(false);
+            spawnTile(false);
+            
+            // 2. 產生初始金幣
+            spawnCoin();
+            
+            // 3. 更新 UI
+            updateUI();
+            saveGameState();
+            console.log("Game initialized.");
+        };
+
+        // --- 遊戲說明邏輯 ---
+
+        const renderInstructions = () => {
+            const instructionsTextEl = document.getElementById('instructions-text');
+            instructionsTextEl.innerHTML = `
+                <h4 class="text-xl font-bold text-gray-800 mb-2 border-b pb-1">一、 遊玩方式</h4>
+                <ul class="list-none space-y-2 ml-4 text-sm">
+                    <li><b>目標：</b> 通過合併方塊，在不填滿整個面板的前提下，達到 2048 數字方塊。</li>
+                    <li><b>移動：</b> 使用鍵盤方向鍵 (↑↓←→) 移動所有方塊。</li>
+                    <li><b>合併：</b> 兩個相同數字的方塊碰撞時會合併成總和 (例如：2 + 2 = 4)。</li>
+                    <li><b>新方塊：</b> 每完成一次有效移動，會在空白處隨機生成一個新的 2 或 4 方塊（新方塊會有持續 5 秒的閃爍以提示玩家。）</li>
+                </ul>
+
+                <h4 class="text-xl font-bold text-gray-800 mt-4 mb-2 border-b pb-1">二、 金幣</h4>
+                <ul class="list-none space-y-2 ml-4 text-sm">
+                    <li><b>收集方式：</b> 只要任一方塊在移動後，滑動到或合併到金幣所在的格子，該金幣就會被收集。</li>
+                    <li><b>生成限制：</b> 遊戲盤上剩餘的空白格子數量少於 5 格時，將停止生成新的金幣。</li>
+                    <li><b>用途：</b> 收集到的金幣可用於「主題商店」購買新的配色主題。</li>
+                </ul>
+            `;
+        }
+        
+        const showInstructions = () => {
+            renderInstructions();
+            const modal = document.getElementById('instruction-modal');
+            const content = document.getElementById('instruction-content');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            setTimeout(() => {
+                content.classList.remove('opacity-0', 'scale-95');
+                content.classList.add('opacity-100', 'scale-100');
+            }, 10);
+        };
+
+        const hideInstructions = () => {
+            const modal = document.getElementById('instruction-modal');
+            const content = document.getElementById('instruction-content');
+            content.classList.remove('opacity-100', 'scale-100');
+            content.classList.add('opacity-0', 'scale-95');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            }, 300);
+        };
+
+        // --- 事件監聽器 (鍵盤與觸控) ---
+        const setupEventListeners = () => {
+            // 鍵盤事件
+            document.addEventListener('keydown', (e) => {
+                if (isGameOver) return;
+                let direction = null;
+                switch (e.key) {
+                    case 'ArrowUp': direction = 'UP'; break;
+                    case 'ArrowDown': direction = 'DOWN'; break;
+                    case 'ArrowLeft': direction = 'LEFT'; break;
+                    case 'ArrowRight': direction = 'RIGHT'; break;
+                }
+                
+                if (direction) {
+                    e.preventDefault();
+                    handleMove(direction);
+                }
+            });
+
+            // 按鈕事件
+            document.getElementById('restart-btn').addEventListener('click', initGame);
+            document.getElementById('overlay-restart-btn').addEventListener('click', initGame);
+            document.getElementById('shop-btn').addEventListener('click', showShop);
+            document.getElementById('close-shop-btn').addEventListener('click', hideShop);
+            // 新增說明按鈕事件
+            document.getElementById('instructions-btn').addEventListener('click', showInstructions);
+            document.getElementById('close-instructions-btn').addEventListener('click', hideInstructions);
+
+
+            // 觸控事件 (Swipe)
+            const gameBoardContainer = document.getElementById('game-board-container');
+            let startX, startY;
+
+            gameBoardContainer.addEventListener('touchstart', (e) => {
+                startX = e.touches[0].clientX;
+                startY = e.touches[0].clientY;
+            });
+
+            gameBoardContainer.addEventListener('touchend', (e) => {
+                if (!e.changedTouches || isGameOver) return;
+
+                const endX = e.changedTouches[0].clientX;
+                const endY = e.changedTouches[0].clientY;
+                const dx = endX - startX;
+                const dy = endY - startY;
+                const threshold = 50; // 最小移動距離
+                
+                if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > threshold) {
+                    // 左右滑動
+                    handleMove(dx > 0 ? 'RIGHT' : 'LEFT');
+                } else if (Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > threshold) {
+                    // 上下滑動
+                    handleMove(dy > 0 ? 'DOWN' : 'UP');
+                }
+            });
+        };
+
+        // --- 主題商店邏輯 ---
+
+        // 應用主題
+        const applyTheme = (themeId) => {
+            const theme = themes.find(t => t.id === themeId);
+            if (!theme) return;
+
+            currentThemeId = themeId;
+            const bodyEl = document.getElementById('body');
+            const gameBoardEl = document.getElementById('game-board');
+            const rootStyle = document.documentElement.style;
+
+            // 移除舊的 body 漸層 class
+            bodyEl.className = bodyEl.className.replace(/bg-gradient-to-[a-z]+-50/g, '').trim();
+
+            if (theme.gradient) {
+                // 如果有漸層，則設定 Tailwind class
+                bodyEl.classList.add(...theme.gradient.split(' '));
+                bodyEl.style.backgroundColor = ''; // 清除單色背景
+            } else {
+                // 如果沒有漸層，則設定單色背景
+                bodyEl.style.backgroundColor = theme.bodyBg;
+            }
+
+            gameBoardEl.style.backgroundColor = theme.boardBg;
+
+            // 設置 CSS 變量以便方塊使用
+            for (const [key, value] of Object.entries(theme.colorMap)) {
+                rootStyle.setProperty(`--tile-bg-${key}`, value);
+            }
+            
+            // 重新渲染 UI 確保方塊顏色更新
+            updateUI();
+        };
+
+        // 渲染主題商店列表
+        const renderThemeList = () => {
+            const listEl = document.getElementById('theme-list');
+            listEl.innerHTML = '';
+            
+            themes.forEach(theme => {
+                const isPurchased = purchasedThemes.has(theme.id);
+                const isCurrent = theme.id === currentThemeId;
+
+                const themeItem = document.createElement('div');
+                
+                // 1. 設置基礎類別
+                themeItem.className = 'flex items-center justify-between p-4 rounded-xl shadow-lg border transition-all duration-300';
+                
+                // 2. 新增漸層/背景類別 (修復點: 使用 += 進行字串拼接，避免 DOMTokenList 錯誤)
+                themeItem.className += ` ${theme.gradient ? theme.gradient : 'bg-white'}`;
+                
+                // 3. 新增當前主題邊框類別 (修復點: 使用 += 進行字串拼接)
+                // 由於基礎類別已經有 'border'，這裡只需加上顏色和寬度即可覆蓋
+                themeItem.className += ` ${isCurrent ? 'border-4 border-blue-500' : 'border-gray-200'}`;
+
+                themeItem.style.backgroundColor = theme.bodyBg.startsWith('#') ? theme.bodyBg : 'white';
+
+
+                // 預覽
+                const previewColor = document.createElement('div');
+                previewColor.className = 'w-6 h-6 rounded-full mr-4 shadow-md';
+                previewColor.style.backgroundColor = theme.boardBg;
+                
+                // 名稱和價格
+                const infoDiv = document.createElement('div');
+                infoDiv.className = 'flex-grow';
+                infoDiv.innerHTML = `
+                    <p class="font-bold text-gray-800">${theme.name}</p>
+                    <p class="text-sm text-gray-600">
+                        ${isPurchased ? '已擁有' : `價格: <span class="text-amber-500 font-extrabold">${theme.cost}</span> 金幣`}
+                    </p>
+                `;
+
+                // 按鈕
+                const button = document.createElement('button');
+                button.className = 'px-4 py-2 font-bold rounded-full transition-colors ml-4 shadow-md text-sm';
+                button.dataset.themeId = theme.id;
+                
+                if (isCurrent) {
+                    button.textContent = '使用中';
+                    button.className += ' bg-gray-300 text-gray-700 cursor-not-allowed';
+                    button.disabled = true;
+                } else if (isPurchased) {
+                    button.textContent = '使用';
+                    button.className += ' bg-green-500 hover:bg-green-600 text-white';
+                    button.onclick = () => {
+                        applyTheme(theme.id);
+                        saveGameState();
+                        hideShop();
+                    };
+                } else {
+                    button.textContent = '購買';
+                    button.className += ' ' + (coins >= theme.cost ? 'bg-amber-500 hover:bg-amber-600 text-white' : 'bg-gray-400 text-gray-600 cursor-not-allowed');
+                    button.disabled = coins < theme.cost;
+                    if (coins >= theme.cost) {
+                        button.onclick = () => purchaseTheme(theme.id, theme.cost);
+                    }
+                }
+                
+                themeItem.appendChild(previewColor);
+                themeItem.appendChild(infoDiv);
+                themeItem.appendChild(button);
+                listEl.appendChild(themeItem);
+            });
+        };
+
+        // 購買主題
+        const purchaseTheme = (themeId, cost) => {
+            if (coins >= cost && !purchasedThemes.has(themeId)) {
+                coins -= cost;
+                purchasedThemes.add(themeId);
+                applyTheme(themeId); // 購買後立即使用
+                saveGameState();
+                renderThemeList(); // 重新渲染商店列表
+            }
+        };
+
+        // 顯示/隱藏商店 Modal
+        const showShop = () => {
+            renderThemeList();
+            const modal = document.getElementById('shop-modal');
+            const content = document.getElementById('shop-content');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            setTimeout(() => {
+                content.classList.remove('opacity-0', 'scale-95');
+                content.classList.add('opacity-100', 'scale-100');
+            }, 10);
+        };
+
+        const hideShop = () => {
+            const modal = document.getElementById('shop-modal');
+            const content = document.getElementById('shop-content');
+            content.classList.remove('opacity-100', 'scale-100');
+            content.classList.add('opacity-0', 'scale-95');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            }, 300);
+        };
+
+        // --- 啟動函式 ---
+        window.onload = async () => {
+            await initializeFirebase();
+            
+            // 等待 Firestore Listener 載入資料後再初始化遊戲
+            const checkAuthAndData = setInterval(() => {
+                if (isAuthReady) {
+                    clearInterval(checkAuthAndData);
+                    // 確保 UI 結構已建立
+                    for (let i = 0; i < 16; i++) {
+                        const [r, c] = indexToCoords(i);
+                        const cell = document.createElement('div');
+                        cell.className = 'tile-cell';
+                        cell.id = `cell-${r}-${c}`; // 確保單元格有 ID
+                        document.getElementById('game-board').appendChild(cell);
+                    }
+                    
+                    setupEventListeners();
+                    initGame(); // 開始遊戲
+                }
+            }, 100);
+        };
+
+    </script>
+</body >
+</html>

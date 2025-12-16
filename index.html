@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;700&display=swap" rel="stylesheet">
+    <title>卓玠含's Blog</title>
+</head>
+<style>
+    body {
+        font-family: 'Noto Serif TC', serif; 
+        font-size: 20px;
+        background-color: #e7e7e7;
+        text-align: center;
+        padding: 20px;
+    }
+
+    @media(max-width:600px) {
+        body {
+            font-size: 16px;
+            background-color: rgb(252, 255, 255);
+        }
+    }
+
+    @media(min-width:601px)and(max-width:900px) {
+        body {
+            font-size: 18px;
+            background-color: rgb(251, 245, 234);
+        }
+    }
+
+    .highlight {
+        padding: 10px 0;
+    
+    /* 讓導航連結之間有間隔 */
+    display: flex; 
+    justify-content: center; /* 居中排列 */
+    gap: 20px; /* 項目間距 */
+    }
+    .highlight a {
+    text-decoration: none; /* 移除預設底線 */
+    color: #333; /* 使用深色文字 */
+    transition: color 0.3s;
+}
+
+.highlight a:hover {
+    color: #007bff; /* 滑鼠懸停時變色 */
+}
+    
+    .wrapper {
+        display: flex;
+        flex-flow: row wrap;
+        font-weight: bold;
+        text-align: center;
+    }
+
+    .wrapper>* {
+        padding: 5px;
+        flex: 1 100%;
+    }
+/* 針對所有文章標題下的 H2 標籤 */
+.header {
+    /* 1. 移除不協調的背景色，改為透明 */
+    background: transparent; 
+    
+    /* 2. 在標題下方增加一條柔和的分割線 */
+    border-bottom: 2px solid #e0e0e0; /* 淺灰色線條 */
+    
+    /* 3. 增加底部間距 */
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+    
+    /* 4. 讓標題文字靠左 (與內文風格保持一致) */
+    text-align: left; 
+}
+
+/* 確保 H2 標題文字本身使用專業色 */
+.header h2 {
+    color: #333; /* 使用深灰色 */
+    font-weight: 700; /* 保持粗體 */
+    margin: 0; /* 移除 H2 預設的邊距 */
+}
+
+
+    article, 
+    .wrapper {
+        /* 圓角：讓卡片邊緣看起來柔和 */
+        border-radius: 12px; 
+    
+        /* 內邊距：確保內容不會緊貼邊緣 */
+        padding: 20px;
+    
+        /* 外間距：在不同卡片之間創造視覺空間 */
+        margin-bottom: 30px; 
+    
+        /* 背景色：設定為白色或淺色，讓卡片感更強烈 */
+        background-color: rgb(255, 255, 255); 
+
+        /* 陰影 (Box Shadow)：這是創造「浮動」效果的關鍵 */
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); 
+        /* 陰影參數說明：
+         0: X軸偏移 (無水平移動)
+        4px: Y軸偏移 (陰影在下方 4px 處)
+        8px: 模糊半徑 (柔和的陰影邊緣)
+        rgba(0, 0, 0, 0.1): 陰影顏色為黑色，透明度為 10% (柔和)
+        */
+    }
+
+    @media all and(min-width:600px) {
+        .aside {
+            flex: 1 auto;
+        }
+    }
+
+    @media all and(min-width:800px) {
+        .main {
+            flex: 2 0px;
+        }
+
+        .aside-1 {
+            order: 1;
+        }
+
+        .main {
+            order: 2;
+        }
+
+        .aside-2 {
+            order: 3;
+        }
+
+        .footer {
+            order: 4;
+        }
+    }
+    /* 設置技能表格寬度，讓進度條有足夠的空間展示 */
+    .skills-table {
+        width: 80%; /* 讓表格不要佔滿整個頁面 */
+        margin: 20px auto; /* 居中表格 */
+        border-collapse: collapse;
+    }
+
+    .skills-table td {
+        padding: 10px 0;
+        vertical-align: middle;
+    }
+
+    .skills-table td:first-child {
+        width: 20%; /* 技能名稱佔比 */
+        font-weight: bold;
+        text-align: right;
+        padding-right: 20px;
+    }
+
+    /* 1. 進度條外部容器樣式 */
+        .progress-bar-container {
+        width: 100%; /* 佔滿表格單元格的剩餘空間 */
+        background-color: #e0e0e0; /* 容器背景色（未達成的部分） */
+        border-radius: 15px; /* 圓角 */
+        overflow: hidden; /* 確保內部進度條的圓角一致 */
+    }
+
+    /* 2. 實際進度條樣式 */
+    .progress-bar {
+        height: 30px; /* 進度條高度 */
+        background-color: #007bff; /* 進度條顏色 (可以改為你喜歡的綠色或主色調) */
+        color: white; /* 百分比文字顏色 */
+        text-align: right;
+        padding-right: 10px;
+        line-height: 30px; /* 讓文字垂直居中 */
+        font-size: 14px;
+        font-weight: bold;
+        border-radius: 15px;
+    
+        /* 增加動畫效果：讓進度條載入時滑入 */
+        transition: width 1.5s ease-out;
+    }
+    .timeline-container {
+    padding: 20px;
+    margin: 20px auto;
+    max-width: 800px; /* 限制時間軸最大寬度 */
+}
+
+.timeline {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    position: relative;
+}
+
+/* 繪製垂直線條：使用 ::before 偽元素 */
+.timeline::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 50%; /* 將線條放在中間 */
+    width: 4px;
+    background-color: #5d9cec; /* 藍色線條 */
+    transform: translateX(-50%);
+}
+
+/* 每個時間點項目 */
+.timeline li {
+    position: relative;
+    margin-bottom: 20px;
+    width: 50%; /* 每個項目佔總寬度的一半 */
+    clear: both; /* 清除浮動，確保項目交替排列 */
+}
+
+/* 讓項目左右交替排列 (奇數靠左，偶數靠右) */
+.timeline li:nth-child(odd) {
+    float: left;
+    text-align: right; /* 內容靠右對齊 */
+    padding-right: 30px;
+}
+
+.timeline li:nth-child(even) {
+    float: right;
+    text-align: left; /* 內容靠左對齊 */
+    padding-left: 30px;
+}
+
+/* 標籤 (日期/時間)：線上的圓點 */
+.timeline-badge {
+    position: absolute;
+    z-index: 100;
+    width: 150px; /* 日期圓圈的寬度 */
+    height: 30px;
+    line-height: 30px;
+    text-align: center;
+    border-radius: 15px;
+    background-color: #007bff; /* 綠色圓點 */
+    color: rgb(255, 255, 255);
+    font-weight: bold;
+    top: 0;
+}
+
+/* 奇數項目 (靠左) 的圓點位置 */
+.timeline li:nth-child(odd) .timeline-badge {
+    right: -50px; /* 移到中間線左側 */
+}
+
+/* 偶數項目 (靠右) 的圓點位置 */
+.timeline li:nth-child(even) .timeline-badge {
+    left: -50px; /* 移到中間線右側 */
+}
+
+/* 內容面板樣式 */
+.timeline-panel {
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    padding: 15px;
+    background-color: white;
+    box-shadow: 0 1px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* 媒體查詢：單欄佈局 (手機) */
+@media (max-width: 768px) {
+    .timeline::before {
+        left: 20px; /* 將垂直線條移到左邊 */
+    }
+    
+    .timeline li,
+    .timeline li:nth-child(odd),
+    .timeline li:nth-child(even) {
+        width: 100%;
+        float: none;
+        padding-left: 50px; /* 為左側的線條留出空間 */
+        text-align: left;
+    }
+
+    .timeline-badge {
+        left: 20px !important; /* 所有圓點都靠左 */
+        transform: translateX(-50%);
+        width: auto;
+        padding: 0 10px;
+    }
+    
+    /* 移除左側項目的右邊距，防止錯位 */
+    .timeline li:nth-child(odd) {
+        padding-right: 0;
+    }
+
+    }
+    /* 1. 讓所有內文和簡介文字靠左 */
+#section1 p,
+#section1 figcaption {
+    text-align: left;
+}
+
+/* 2. 確保包含頭像和簡介的表格內容靠左 */
+#section1 table {
+    /* 如果表格設定了 margin: auto (自動居中)，這會讓表格靠左 */
+    margin-left: 0;
+    margin-right: auto;
+}
+
+/* 3. 確保表格內的文字靠左 (針對 td 內容) */
+#section1 table td {
+    text-align: left;
+}
+video {
+    max-width: 100%;
+    height: auto;
+    border-radius: 8px; /* 與卡片圓角保持一致 */
+}
+/* 讓網頁中的所有圖片都具備響應式能力 */
+img {
+    /* 1. 設置最大寬度為其父容器的 100% */
+    max-width: 100%;
+    
+    /* 2. 讓高度自動調整，以保持圖片的原始比例 */
+    height: auto; 
+    
+    /* 你可以保留其他圖片樣式，例如圓角、邊距等 */
+    border-radius: 8px; 
+    display: block; /* 推薦：讓圖片像區塊一樣，避免圖片下方出現多餘空間 */
+}
+
+</style>
+
+<body>
+    
+    <!-- 頁頭區 -->
+    <header>
+        <h1>卓玠含的個人部落格</h1>
+        <nav class="highlight">
+            <a href="#section1">關於我</a>
+            <a href="#section2">工作經歷</a>
+            <a href="#section3">工作技能</a>
+            <a href="#section4">音樂作品</a>
+            <a href="#section5">視訊作品</a>
+            <a href="#section6">圖片作品</a>
+            <a href="#section7">遊戲作品</a>
+            <a href="#section8">更多資訊</a>
+        </nav>
+    </header>
+
+    <!-- 主內容區 -->
+    <main>
+        <!-- 側邊欄補充資訊 -->
+       <!-- <aside style="width:50%; float:right;">
+            <blockquote>
+                <h3></h3>
+                <p>
+                
+                </p>
+            </blockquote>
+        </aside>-->
+
+        <!-- 個人介紹 -->
+        <article id="section1">
+            <header>
+                <h2 class="header">關於我</h2>
+                <!--<p>在此部落格中，將分享我在工作上及生活中的點滴</p>-->
+            </header>
+            <section>
+                <table cellspacing="20">
+                    <tr>
+                        <td><img src="assets/images/dog.jpg" alt="My picture"></td>
+                        <td>
+                            <h1>Jasmine</h1>
+                            <p>
+                                <em><strong><a href="https://www.ntue.edu.tw/"></a></strong>- Firmware Engineer -</em>
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+            </section>
+            <section>
+                <p>我是一位IC軟體工程師，擅長<mark>電路設計與模擬</mark> 和 <mark>佈局與驗證</mark>，並致力於 <mark>深度學習</mark> 與 <mark>生成式 AI
+                    </mark>在工程應用上的創新研究與應用。</p>
+                <p>此外，我也熱愛旅遊、音樂與閱讀，希望將藝術與科技結合，注入更多元的靈感與視野。</p>
+            </section>
+        </article>
+
+        <!-- 工作經歷介紹 -->
+        <article id="section2">
+            <div class="wrapper">
+                <header>
+                    <h2 class="header">工作經歷</h2>
+                </header>
+                <section class="timeline-container">
+                    <ul class="timeline">
+                        <li>
+                            <div class="timeline-badge">2019 - 現今</div>
+                            <div class="timeline-panel">
+                                <h3>台積電 TSMC</h3>
+                                <p>擔任先進製程部門的 IC 軟體工程師，專注於深度學習與生成式 AI 在半導體製造的應用與創新。</p>
+                            </div>
+                        </li>
+                        
+                        <li>
+                            <div class="timeline-badge">2015 - 2019</div>
+                            <div class="timeline-panel">
+                                <h3>矽創 Silicon Motion</h3>
+                                <p>擔任韌體工程師，負責記憶體控制器的設計、優化與驗證，具備電路設計與模擬經驗。</p>
+                            </div>
+                        </li>
+                    </ul>
+                </section>
+        </article>
+
+        <!-- 技能介紹 -->
+        <article id="section3">
+            <header>
+                <h2 class="header">工作技能</h2>
+            </header>
+            <section>
+                <table class="skills-table">
+                    <tr>
+                        <td>Java</td>
+                        <td>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar" style="width: 80%;">80%</div> 
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>C++</td>
+                        <td>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar" style="width: 60%;">60%</div>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Python</td>
+                        <td>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar" style="width: 90%;">90%</div> 
+                            </div>
+                        </td>
+                    </tr>
+                </table>
+            </section>
+        </article>
+
+        <!-- 音樂作品介紹 -->
+        <article id="section4">
+            <h2 class="header">音訊作品</h2>
+            <audio controls>
+                <!-- 改為你的作品 -->
+                <source src="assets/audio/BeWithYou.mp3" type="audio/mpeg">
+            </audio>
+        </article>
+
+        <!-- 視訊作品介紹 -->
+        <article id="section5">
+            <h2 class="header" >視訊作品</h2>
+            <video controls width="300">
+                <!-- 改為你的作品 -->
+                <source src="assets/video/ai.mp4" type="video/mp4">
+            </video>
+        </article>
+
+        <!-- 圖片作品集介紹與描述 -->
+        <article id="section6">
+            <h2 class="header">旅行照片集</h2>
+            <figure style="display:inline-block;">
+                <!-- 改為你的作品 -->
+                <img src="assets/images/paris-eiffel.jpg" alt="艾菲爾鐵塔" width="450">
+                <figcaption>艾菲爾鐵塔</figcaption>
+            </figure>
+            <figure style="display:inline-block;">
+                <!-- 改為你的作品 -->
+                <img src="assets/images/Louvre.jpg" alt="羅浮宮" width="450">
+                <figcaption>羅浮宮</figcaption>
+            </figure>
+        </article>
+
+        <!-- 遊戲作品-->
+        <article id="section7">
+            <h2 class="header">遊戲作品</h2>
+            <section>
+                <figure style="display:block; margin: 20px auto;">
+                    <h3> </h3>
+                    <iframe 
+                    src="games/game.html" 
+                    width="100%" 
+                    height="600" 
+                    frameborder="0" 
+                    title="嵌入的網頁遊戲">
+                </iframe>
+                   
+                    <a href="https://gemini.google.com/share/737b546b32a6" target="_blank">
+
+                        <figcaption style="text-align: center; color: #007bff; font-weight: bold;">
+                            點擊此處開始玩遊戲
+                        </figcaption>
+                    </a>
+
+                </figure>
+                
+                </section>
+        </article>
+        <!-- 嵌入PDF文件 -->
+        <article id="section8">
+            <h2 class="header">更多資訊</h2>
+            <!-- 改為你的作品 -->
+            <embed src="assets/pdf/bear.pdf" width="500" height="600">
+        </article>
+
+        <!-- 互動元素 -->
+        <details>
+            <summary>點擊查看學習提示</summary>
+            <p>建議攜帶筆記本與筆，方便隨時記錄課堂中的關鍵知識點與靈感。</p>
+        </details>
+
+        <!-- 加入地圖 -->
+        <iframe
+            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3615.2784024338266!2d121.54206247541927!3d25.02462437782254!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3442a908a8232611%3A0xeebfb2d71a5025c7!2z5ZyL56uL6Ie65YyX5pWZ6IKy5aSn5a24!5e0!3m2!1szh-TW!2stw!4v1731827435609!5m2!1szh-TW!2stw"
+            width="600" height="450" style="border:0;" allowfullscreen="" loading="lazy"
+            referrerpolicy="no-referrer-when-downgrade"></iframe>
+    </main>
+
+    <!-- 頁尾區 -->
+    <footer>
+        <p>聯絡我們：contact@personalblog.com</p>
+        <time datetime="2025-11-30">最後更新日期：2025年11月30日</time>
+    </footer>
+</body>
+
+</html>
